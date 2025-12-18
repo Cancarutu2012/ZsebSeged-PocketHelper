@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiApp Pro Max + Torch</title>
+    <title>Mindenes - Segédalkalmazás</title>
     <style>
         :root {
             --bg-color: #F2F2F2;
@@ -73,9 +73,10 @@
             outline: none;
         }
 
+        /* Navigáció */
         .bottom-nav {
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 450px; background: #1A1A1A; height: 75px;
+            width: 92%; max-width: 500px; background: #1A1A1A; height: 75px;
             border-radius: 38px; display: flex; justify-content: space-around;
             align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 1000;
         }
@@ -88,9 +89,11 @@
         .view { display: none; }
         .view.active { display: block; }
 
-        /* Torch Style */
-        .torch-container { text-align: center; padding: 40px 0; }
-        .torch-status { margin-top: 20px; font-size: 14px; color: var(--text-sub); }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        
+        .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--btn-sec); padding: 12px; border-radius: 15px; margin-bottom: 8px; }
+        .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .gallery-item img { width: 100%; border-radius: 18px; aspect-ratio: 1/1; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -106,7 +109,7 @@
     <div id="view-tools" class="view active">
         <div class="card">
             <div id="display" style="font-size: 36px; text-align: right; margin-bottom: 15px; font-weight: bold;">0</div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+            <div class="calc-grid">
                 <button class="secondary" onclick="append('7')">7</button>
                 <button class="secondary" onclick="append('8')">8</button>
                 <button class="secondary" onclick="append('9')">9</button>
@@ -125,8 +128,20 @@
                 <button onclick="append('+')">+</button>
             </div>
         </div>
+
         <div class="card">
-            <h2>Valutaváltó</h2>
+            <h2>Mértékegység váltó</h2>
+            <input type="number" id="conv-input" placeholder="Érték...">
+            <div style="display:flex; gap:10px;">
+                <select id="conv-from" onchange="filterUnits()"></select>
+                <select id="conv-to"></select>
+            </div>
+            <button onclick="convertUnits()">Átváltás</button>
+            <p id="conv-res" style="text-align: center; font-weight: bold; margin-top: 10px;"></p>
+        </div>
+
+        <div class="card">
+            <h2>Valutaváltó (Online)</h2>
             <input type="number" id="curr-input" placeholder="Összeg...">
             <div style="display:flex; gap:10px;">
                 <select id="curr-from"></select>
@@ -139,35 +154,39 @@
 
     <div id="view-shop" class="view">
         <div class="card">
-            <h2>Lista</h2>
-            <div style="display: flex; gap: 10px;"><input type="text" id="shop-input" style="margin:0"><button onclick="addItem()" style="width:60px">+</button></div>
-            <div id="shop-list" style="margin-top:15px"></div>
+            <h2>Bevásárlólista</h2>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="shop-input" placeholder="Új tétel..." style="margin:0">
+                <button onclick="addItem()" style="width: 60px;">+</button>
+            </div>
+            <div id="shop-list" style="margin-top: 15px;"></div>
         </div>
     </div>
 
     <div id="view-mem" class="view">
         <div class="card">
-            <h2>Emlékek</h2>
-            <input type="file" id="img-input" style="display:none" onchange="saveMem(this)">
-            <button onclick="document.getElementById('img-input').click()">Kép feltöltése</button>
+            <h2>Napi Emlék</h2>
+            <input type="file" id="img-input" accept="image/*" style="display: none;" onchange="saveMem(this)">
+            <button id="mem-btn" onclick="document.getElementById('img-input').click()">Kép feltöltése</button>
+            <p id="mem-info" style="font-size: 12px; color: var(--text-sub); text-align: center; margin-top:10px;"></p>
         </div>
-        <div id="gallery" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+        <div id="gallery" class="gallery-grid"></div>
     </div>
 
     <div id="view-torch" class="view">
-        <div class="card torch-container">
+        <div class="card" style="text-align: center; padding: 40px 0;">
             <div style="font-size: 50px; margin-bottom: 20px;">🔦</div>
             <h2>Zseblámpa</h2>
-            <button class="switch" id="torch-btn">BE / KI</button>
-            <div class="torch-status" id="console">Készen áll</div>
+            <button id="torch-btn">BE / KI</button>
+            <div id="console" style="margin-top:20px; font-size:12px; color:var(--text-sub);">Készen áll</div>
         </div>
     </div>
 
     <div id="view-settings" class="view">
         <div class="card">
             <h2>Beállítások</h2>
-            <button class="secondary" onclick="toggleDarkMode()">Sötét mód</button>
-            <button onclick="resetAll()" style="background:#FF3B30; color:white; margin-top:20px">Törlés</button>
+            <button class="secondary" onclick="toggleDarkMode()">Sötét mód váltása</button>
+            <button onclick="resetAll()" style="background:#FF3B30; color:white; margin-top:20px;">Adatok törlése</button>
         </div>
     </div>
 
@@ -180,85 +199,147 @@
     </nav>
 
     <script>
-        // --- ZSEBLÁMPA SCRIPT INTEGRÁCIÓ ---
-        let track = null;
-        let isTorchOn = false;
-        const consoleOutput = document.getElementById("console");
-        const log = (msg) => { consoleOutput.innerText = msg; };
+        // --- MÉRTÉKEGYSÉG VÁLTÓ ---
+        const units = {
+            hossz: { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, km: 1000 },
+            folyadek: { l: 1, ml: 0.001, cl: 0.01, hl: 100 },
+            suly: { g: 1, dkg: 10, kg: 1000, t: 1000000, q: 100000 }
+        };
 
-        async function initTorch() {
-            if (!('mediaDevices' in navigator)) return log("Nem támogatott böngésző");
-            
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const cameras = devices.filter(d => d.kind === 'videoinput');
-                if (cameras.length === 0) return log("Nincs kamera");
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
+        function initUnits() {
+            const from = document.getElementById('conv-from');
+            from.innerHTML = '';
+            Object.keys(units).forEach(cat => {
+                const group = document.createElement('optgroup');
+                group.label = cat.toUpperCase();
+                Object.keys(units[cat]).forEach(u => {
+                    from.add(new Option(u, `${cat}:${u}`));
                 });
-                
-                track = stream.getVideoTracks()[0];
-                const imageCapture = new ImageCapture(track);
-                const capabilities = await imageCapture.getPhotoCapabilities();
-
-                if (capabilities.torch) {
-                    document.getElementById('torch-btn').addEventListener('click', async () => {
-                        try {
-                            isTorchOn = !isTorchOn;
-                            await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
-                            log(isTorchOn ? "Világít" : "Kikapcsolva");
-                        } catch (e) { log("Hiba: " + e); }
-                    });
-                } else { log("Nincs zseblámpa hardver"); }
-            } catch (err) { log("Engedély megtagadva"); }
+            });
+            filterUnits();
         }
 
-        // --- ALAP FUNKCIÓK ---
-        function nav(id, el) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('view-' + id).classList.add('active');
-            el.classList.add('active');
-            if(id === 'torch' && !track) initTorch();
-            if(id === 'mem') renderMem();
+        function filterUnits() {
+            const [cat] = document.getElementById('conv-from').value.split(':');
+            const to = document.getElementById('conv-to');
+            to.innerHTML = '';
+            Object.keys(units[cat]).forEach(u => to.add(new Option(u, u)));
         }
 
-        // Számológép / Valuta / Lista (rövidítve az olvashatóságért, funkciók maradnak)
-        let ex = "";
-        function append(v) { ex += v; document.getElementById('display').innerText = ex; }
-        function clearCalc() { ex = ""; document.getElementById('display').innerText = "0"; }
-        function calculate() { try { ex = eval(ex).toString(); document.getElementById('display').innerText = ex; } catch { ex = ""; }}
+        function convertUnits() {
+            const val = parseFloat(document.getElementById('conv-input').value);
+            const [cat, fromU] = document.getElementById('conv-from').value.split(':');
+            const toU = document.getElementById('conv-to').value;
+            if(isNaN(val)) return;
+            const res = (val * units[cat][fromU]) / units[cat][toU];
+            document.getElementById('conv-res').innerText = `${val} ${fromU} = ${res.toLocaleString()} ${toU}`;
+        }
 
+        // --- VALUTAVÁLTÓ ---
         async function loadCurrencyList() {
-            const r = await fetch('https://api.frankfurter.app/currencies');
-            const d = await r.json();
-            const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
-            Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
-            f.value = "EUR"; t.value = "HUF";
+            try {
+                const r = await fetch('https://api.frankfurter.app/currencies');
+                const d = await r.json();
+                const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
+                Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
+                f.value = "EUR"; t.value = "HUF";
+            } catch(e) {}
         }
 
         async function convertCurrency() {
             const a = document.getElementById('curr-input').value, f = document.getElementById('curr-from').value, t = document.getElementById('curr-to').value;
             if(!a) return;
-            const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
-            const d = await r.json();
-            document.getElementById('curr-res').innerText = `${a} ${f} = ${d.rates[t].toLocaleString()} ${t}`;
+            try {
+                const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
+                const d = await r.json();
+                document.getElementById('curr-res').innerText = `${a} ${f} = ${d.rates[t].toLocaleString()} ${t}`;
+            } catch(e) { alert("Hiba az online váltásnál."); }
         }
 
-        function toggleDarkMode() { localStorage.setItem('dark', document.body.classList.toggle('dark-mode')); }
-        
+        // --- EMLÉKEK (MEMORIES) ---
+        function saveMem(input) {
+            if (!input.files || !input.files[0]) return;
+            const today = new Date().toLocaleDateString();
+            const m = JSON.parse(localStorage.getItem('m')) || {};
+            
+            if (m[today]) { alert("Mára már rögzítettél emléket!"); return; }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                m[today] = e.target.result;
+                localStorage.setItem('m', JSON.stringify(m));
+                renderMem();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function renderMem() {
+            const g = document.getElementById('gallery');
+            const m = JSON.parse(localStorage.getItem('m')) || {};
+            const today = new Date().toLocaleDateString();
+            g.innerHTML = '';
+            
+            document.getElementById('mem-btn').style.display = m[today] ? 'none' : 'block';
+            document.getElementById('mem-info').innerText = m[today] ? "Mai emlék rögzítve." : "Még nincs mára emléked.";
+
+            Object.keys(m).sort().reverse().forEach(d => {
+                g.innerHTML += `<div><img src="${m[d]}"><p style="font-size:10px; text-align:center;">${d}</p></div>`;
+            });
+        }
+
+        // --- ZSEBLÁMPA ---
+        let track = null;
+        async function initTorch() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                track = stream.getVideoTracks()[0];
+                const imageCapture = new ImageCapture(track);
+                const caps = await imageCapture.getPhotoCapabilities();
+                if (caps.torch) {
+                    let on = false;
+                    document.getElementById('torch-btn').onclick = async () => {
+                        on = !on;
+                        await track.applyConstraints({ advanced: [{ torch: on }] });
+                        document.getElementById('console').innerText = on ? "Világít" : "Kikapcsolva";
+                    };
+                }
+            } catch(e) { document.getElementById('console').innerText = "Hiba vagy nem támogatott eszköz."; }
+        }
+
+        // --- APP ALAPOK ---
+        function nav(id, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            el.classList.add('active');
+            document.getElementById('view-title').innerText = {tools:'Eszközök', shop:'Lista', mem:'Emlékek', torch:'Zseblámpa', settings:'Beállítások'}[id];
+            if(id === 'mem') renderMem();
+            if(id === 'torch' && !track) initTorch();
+        }
+
+        let ex = "";
+        function append(v) { ex += v; document.getElementById('display').innerText = ex; }
+        function clearCalc() { ex = ""; document.getElementById('display').innerText = "0"; }
+        function calculate() { try { ex = eval(ex).toString(); document.getElementById('display').innerText = ex; } catch { ex = ""; }}
+
         let items = JSON.parse(localStorage.getItem('l')) || [];
-        function renderShop() { const c = document.getElementById('shop-list'); c.innerHTML = ''; items.forEach((it, i) => { c.innerHTML += `<div style="display:flex; justify-content:space-between; background:var(--btn-sec); padding:12px; border-radius:15px; margin-bottom:8px;"><span>${it}</span><span onclick="del(${i})" style="color:#FF3B30">✕</span></div>`; }); localStorage.setItem('l', JSON.stringify(items)); }
+        function renderShop() {
+            const c = document.getElementById('shop-list'); c.innerHTML = '';
+            items.forEach((it, i) => {
+                c.innerHTML += `<div class="list-item"><span>${it}</span><span onclick="del(${i})" style="color:#FF3B30; cursor:pointer; font-weight:bold;">✕</span></div>`;
+            });
+            localStorage.setItem('l', JSON.stringify(items));
+        }
         function addItem() { const i = document.getElementById('shop-input'); if(i.value){items.push(i.value); i.value=''; renderShop();}}
         function del(i) { items.splice(i,1); renderShop(); }
 
-        function saveMem(input) { const r = new FileReader(); r.onload = (e) => { const m = JSON.parse(localStorage.getItem('m')) || {}; m[new Date().toLocaleDateString()] = e.target.result; localStorage.setItem('m', JSON.stringify(m)); renderMem(); }; r.readAsDataURL(input.files[0]); }
-        function renderMem() { const g = document.getElementById('gallery'); const m = JSON.parse(localStorage.getItem('m')) || {}; g.innerHTML = ''; Object.keys(m).reverse().forEach(d => { g.innerHTML += `<div><img src="${m[d]}" style="width:100%; border-radius:15px; aspect-ratio:1/1; object-fit:cover;"><p style="font-size:10px; text-align:center;">${d}</p></div>`; }); }
-        function resetAll() { if(confirm("Törlés?")){localStorage.clear(); location.reload();}}
+        function toggleDarkMode() { localStorage.setItem('dark', document.body.classList.toggle('dark-mode')); }
+        function resetAll() { if(confirm("Minden adatot törölsz?")){localStorage.clear(); location.reload();}}
 
+        // START
         document.getElementById('today-date').innerText = new Date().toLocaleDateString('hu-HU', {weekday:'long', month:'long', day:'numeric'});
         if(localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
+        initUnits();
         loadCurrencyList();
         renderShop();
     </script>

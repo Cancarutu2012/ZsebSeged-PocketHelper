@@ -199,6 +199,10 @@
     </nav>
 
     <script>
+        // --- TÁJÉKOZTATÓ ALERT AZ INDÍTÁSKOR ---
+        window.onload = function() {
+            alert("Figyelem: A zseblámpa funkció jelenleg BETA státuszban van, csak Chrome böngészőben támogatott, és kamera engedély szükséges a működéséhez.");
+        };
         // --- MÉRTÉKEGYSÉG VÁLTÓ ---
         const units = {
             hossz: { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, km: 1000 },
@@ -345,3 +349,4 @@
     </script>
 </body>
 </html>
+

@@ -32,6 +32,7 @@
             padding: 20px;
             padding-bottom: 120px;
             transition: all 0.3s ease;
+            overflow-x: hidden;
         }
 
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
@@ -43,6 +44,8 @@
             padding: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         h2 { font-size: 18px; margin-top: 0; margin-bottom: 15px; }
@@ -86,14 +89,54 @@
         .nav-item.active { background: rgba(255,255,255,0.15); }
         .nav-item.active img { opacity: 1; }
 
-        .view { display: none; }
+        .view { display: none; width: 100%; }
         .view.active { display: block; }
 
+        /* GALÉRIA STÍLUS (Google Fotók szerű) */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 oszlop mobilon */
+            gap: 4px; /* Vékony köz a képek közt */
+            margin-top: 15px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Dátum sáv (csak kattintás után/aktív állapotban) */
+        .gallery-item .date-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 10px;
+            padding: 4px 2px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .gallery-item.show-date .date-overlay {
+            opacity: 1;
+        }
+
         .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        
         .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--btn-sec); padding: 12px; border-radius: 15px; margin-bottom: 8px; }
-        .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .gallery-item img { width: 100%; border-radius: 18px; aspect-ratio: 1/1; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -169,8 +212,8 @@
             <input type="file" id="img-input" accept="image/*" style="display: none;" onchange="saveMem(this)">
             <button id="mem-btn" onclick="document.getElementById('img-input').click()">Kép feltöltése</button>
             <p id="mem-info" style="font-size: 12px; color: var(--text-sub); text-align: center; margin-top:10px;"></p>
+            <div id="gallery" class="gallery-grid"></div>
         </div>
-        <div id="gallery" class="gallery-grid"></div>
     </div>
 
     <div id="view-torch" class="view">
@@ -199,71 +242,15 @@
     </nav>
 
     <script>
-        // --- TÁJÉKOZTATÓ ALERT AZ INDÍTÁSKOR ---
+        // --- INDÍTÁS ---
         window.onload = function() {
-            alert("Figyelem: A zseblámpa funkció jelenleg BETA státuszban van, csak Chrome böngészőben támogatott, és kamera engedély szükséges a működéséhez.");
-        };
-        // --- MÉRTÉKEGYSÉG VÁLTÓ ---
-        const units = {
-            hossz: { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, km: 1000 },
-            folyadek: { l: 1, ml: 0.001, cl: 0.01, hl: 100 },
-            suly: { g: 1, dkg: 10, kg: 1000, t: 1000000, q: 100000 }
+            alert("Figyelem: A zseblámpa funkció jelenleg csak Chrome-ban támogatott, és kamera engedély kell hozzá.");
         };
 
-        function initUnits() {
-            const from = document.getElementById('conv-from');
-            from.innerHTML = '';
-            Object.keys(units).forEach(cat => {
-                const group = document.createElement('optgroup');
-                group.label = cat.toUpperCase();
-                Object.keys(units[cat]).forEach(u => {
-                    from.add(new Option(u, `${cat}:${u}`));
-                });
-            });
-            filterUnits();
-        }
-
-        function filterUnits() {
-            const [cat] = document.getElementById('conv-from').value.split(':');
-            const to = document.getElementById('conv-to');
-            to.innerHTML = '';
-            Object.keys(units[cat]).forEach(u => to.add(new Option(u, u)));
-        }
-
-        function convertUnits() {
-            const val = parseFloat(document.getElementById('conv-input').value);
-            const [cat, fromU] = document.getElementById('conv-from').value.split(':');
-            const toU = document.getElementById('conv-to').value;
-            if(isNaN(val)) return;
-            const res = (val * units[cat][fromU]) / units[cat][toU];
-            document.getElementById('conv-res').innerText = `${val} ${fromU} = ${res.toLocaleString()} ${toU}`;
-        }
-
-        // --- VALUTAVÁLTÓ ---
-        async function loadCurrencyList() {
-            try {
-                const r = await fetch('https://api.frankfurter.app/currencies');
-                const d = await r.json();
-                const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
-                Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
-                f.value = "EUR"; t.value = "HUF";
-            } catch(e) {}
-        }
-
-        async function convertCurrency() {
-            const a = document.getElementById('curr-input').value, f = document.getElementById('curr-from').value, t = document.getElementById('curr-to').value;
-            if(!a) return;
-            try {
-                const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
-                const d = await r.json();
-                document.getElementById('curr-res').innerText = `${a} ${f} = ${d.rates[t].toLocaleString()} ${t}`;
-            } catch(e) { alert("Hiba az online váltásnál."); }
-        }
-
-        // --- EMLÉKEK (MEMORIES) ---
+        // --- GALÉRIA FUNKCIÓK ---
         function saveMem(input) {
             if (!input.files || !input.files[0]) return;
-            const today = new Date().toLocaleDateString();
+            const today = new Date().toLocaleDateString('hu-HU');
             const m = JSON.parse(localStorage.getItem('m')) || {};
             
             if (m[today]) { alert("Mára már rögzítettél emléket!"); return; }
@@ -280,15 +267,76 @@
         function renderMem() {
             const g = document.getElementById('gallery');
             const m = JSON.parse(localStorage.getItem('m')) || {};
-            const today = new Date().toLocaleDateString();
+            const today = new Date().toLocaleDateString('hu-HU');
             g.innerHTML = '';
             
             document.getElementById('mem-btn').style.display = m[today] ? 'none' : 'block';
-            document.getElementById('mem-info').innerText = m[today] ? "Mai emlék rögzítve." : "Még nincs mára emléked.";
+            document.getElementById('mem-info').innerText = m[today] ? "Mai emlék rögzítve." : "Kattints a feltöltéshez.";
 
             Object.keys(m).sort().reverse().forEach(d => {
-                g.innerHTML += `<div><img src="${m[d]}"><p style="font-size:10px; text-align:center;">${d}</p></div>`;
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.onclick = function() { this.classList.toggle('show-date'); };
+                item.innerHTML = `
+                    <img src="${m[d]}" loading="lazy">
+                    <div class="date-overlay">${d}</div>
+                `;
+                g.appendChild(item);
             });
+        }
+
+        // --- MÉRTÉKEGYSÉG ---
+        const units = {
+            hossz: { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, km: 1000 },
+            folyadek: { l: 1, ml: 0.001, cl: 0.01, hl: 100 },
+            suly: { g: 1, dkg: 10, kg: 1000, t: 1000000, q: 100000 }
+        };
+
+        function initUnits() {
+            const from = document.getElementById('conv-from');
+            from.innerHTML = '';
+            Object.keys(units).forEach(cat => {
+                const group = document.createElement('optgroup'); group.label = cat.toUpperCase();
+                Object.keys(units[cat]).forEach(u => from.add(new Option(u, `${cat}:${u}`)));
+            });
+            filterUnits();
+        }
+
+        function filterUnits() {
+            const [cat] = document.getElementById('conv-from').value.split(':');
+            const to = document.getElementById('conv-to'); to.innerHTML = '';
+            Object.keys(units[cat]).forEach(u => to.add(new Option(u, u)));
+        }
+
+        function convertUnits() {
+            const val = parseFloat(document.getElementById('conv-input').value);
+            const [cat, fromU] = document.getElementById('conv-from').value.split(':');
+            const toU = document.getElementById('conv-to').value;
+            if(isNaN(val)) return;
+            const res = (val * units[cat][fromU]) / units[cat][toU];
+            document.getElementById('conv-res').innerText = `${val} ${fromU} = ${res.toLocaleString()} ${toU}`;
+        }
+
+        // --- VALUTA ---
+        async function loadCurrencyList() {
+            try {
+                const r = await fetch('https://api.frankfurter.app/currencies');
+                const d = await r.json();
+                const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
+                Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
+                f.value = "EUR"; t.value = "HUF";
+            } catch(e) {}
+        }
+
+        async function convertCurrency() {
+            const a = document.getElementById('curr-input').value, f = document.getElementById('curr-from').value, t = document.getElementById('curr-to').value;
+            if(!a) return;
+            const resEl = document.getElementById('curr-res'); resEl.innerText = "Lekérés...";
+            try {
+                const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
+                const d = await r.json();
+                resEl.innerText = `${a} ${f} = ${d.rates[t].toLocaleString()} ${t}`;
+            } catch(e) { resEl.innerText = "Hiba az online váltásnál."; }
         }
 
         // --- ZSEBLÁMPA ---
@@ -307,10 +355,10 @@
                         document.getElementById('console').innerText = on ? "Világít" : "Kikapcsolva";
                     };
                 }
-            } catch(e) { document.getElementById('console').innerText = "Hiba vagy nem támogatott eszköz."; }
+            } catch(e) { document.getElementById('console').innerText = "Nem támogatott eszköz."; }
         }
 
-        // --- APP ALAPOK ---
+        // --- NAV ÉS ALAPOK ---
         function nav(id, el) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -330,7 +378,7 @@
         function renderShop() {
             const c = document.getElementById('shop-list'); c.innerHTML = '';
             items.forEach((it, i) => {
-                c.innerHTML += `<div class="list-item"><span>${it}</span><span onclick="del(${i})" style="color:#FF3B30; cursor:pointer; font-weight:bold;">✕</span></div>`;
+                c.innerHTML += `<div class="list-item"><span>${it}</span><span onclick="del(${i})" style="color:#FF3B30; font-weight:bold; cursor:pointer;">✕</span></div>`;
             });
             localStorage.setItem('l', JSON.stringify(items));
         }
@@ -340,13 +388,9 @@
         function toggleDarkMode() { localStorage.setItem('dark', document.body.classList.toggle('dark-mode')); }
         function resetAll() { if(confirm("Minden adatot törölsz?")){localStorage.clear(); location.reload();}}
 
-        // START
         document.getElementById('today-date').innerText = new Date().toLocaleDateString('hu-HU', {weekday:'long', month:'long', day:'numeric'});
         if(localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
-        initUnits();
-        loadCurrencyList();
-        renderShop();
+        initUnits(); loadCurrencyList(); renderShop();
     </script>
 </body>
 </html>
-

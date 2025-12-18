@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mindenes - Segédalkalmazás</title>
+    <title>Mindenes Segéd</title>
     <style>
         :root {
             --bg-color: #F2F2F2;
@@ -32,7 +32,6 @@
             padding: 20px;
             padding-bottom: 120px;
             transition: all 0.3s ease;
-            overflow-x: hidden;
         }
 
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
@@ -44,11 +43,7 @@
             padding: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
             margin-bottom: 20px;
-            width: 100%;
-            box-sizing: border-box;
         }
-
-        h2 { font-size: 18px; margin-top: 0; margin-bottom: 15px; }
 
         button {
             background: var(--accent);
@@ -59,10 +54,12 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
+            margin-bottom: 10px;
         }
 
         button.secondary { background: var(--btn-sec); color: var(--text-main); }
-        
+        button.off-btn { background: #FF3B30; color: white; }
+
         input, select {
             background: var(--btn-sec);
             border: none;
@@ -71,7 +68,6 @@
             width: 100%;
             box-sizing: border-box;
             margin-bottom: 10px;
-            font-size: 16px;
             color: var(--text-main);
             outline: none;
         }
@@ -84,152 +80,93 @@
             align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 1000;
         }
         
-        .nav-item { cursor: pointer; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item img { width: 24px; height: 24px; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.5; }
+        .nav-item { cursor: pointer; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .nav-item img { width: 24px; height: 24px; filter: brightness(0) invert(1); opacity: 0.5; }
         .nav-item.active { background: rgba(255,255,255,0.15); }
         .nav-item.active img { opacity: 1; }
 
-        .view { display: none; width: 100%; }
+        .view { display: none; }
         .view.active { display: block; }
 
-        /* GALÉRIA STÍLUS (Google Fotók szerű) */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 oszlop mobilon */
-            gap: 4px; /* Vékony köz a képek közt */
-            margin-top: 15px;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .gallery-item {
-            position: relative;
-            aspect-ratio: 1 / 1;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* Dátum sáv (csak kattintás után/aktív állapotban) */
-        .gallery-item .date-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            font-size: 10px;
-            padding: 4px 2px;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .gallery-item.show-date .date-overlay {
-            opacity: 1;
-        }
-
-        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--btn-sec); padding: 12px; border-radius: 15px; margin-bottom: 8px; }
+        /* Galéria rács */
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 15px; }
+        .gallery-item { position: relative; aspect-ratio: 1/1; overflow: hidden; cursor: pointer; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .date-overlay { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); color: white; font-size: 10px; text-align: center; opacity: 0; }
+        .gallery-item.show-date .date-overlay { opacity: 1; }
     </style>
 </head>
 <body>
 
     <div class="user-header">
         <div>
-            <p id="today-date" style="font-size: 14px; color: var(--text-sub); margin: 0;"></p>
+            <p id="today-date" style="font-size: 12px; color: var(--text-sub); margin: 0;"></p>
             <h1 id="view-title">Eszközök</h1>
         </div>
-        <div style="width: 40px; height: 40px; background: var(--btn-sec); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
     </div>
 
     <div id="view-tools" class="view active">
         <div class="card">
-            <div id="display" style="font-size: 36px; text-align: right; margin-bottom: 15px; font-weight: bold;">0</div>
-            <div class="calc-grid">
-                <button class="secondary" onclick="append('7')">7</button>
-                <button class="secondary" onclick="append('8')">8</button>
-                <button class="secondary" onclick="append('9')">9</button>
-                <button onclick="append('/')">/</button>
-                <button class="secondary" onclick="append('4')">4</button>
-                <button class="secondary" onclick="append('5')">5</button>
-                <button class="secondary" onclick="append('6')">6</button>
-                <button onclick="append('*')">*</button>
-                <button class="secondary" onclick="append('1')">1</button>
-                <button class="secondary" onclick="append('2')">2</button>
-                <button class="secondary" onclick="append('3')">3</button>
-                <button onclick="append('-')">-</button>
-                <button class="secondary" onclick="clearCalc()">C</button>
-                <button class="secondary" onclick="append('0')">0</button>
-                <button onclick="calculate()">=</button>
-                <button onclick="append('+')">+</button>
+            <div id="display" style="font-size: 32px; text-align: right; font-weight: bold; margin-bottom: 10px;">0</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                <button class="secondary" onclick="append('7')">7</button><button class="secondary" onclick="append('8')">8</button><button class="secondary" onclick="append('9')">9</button><button onclick="append('/')">/</button>
+                <button class="secondary" onclick="append('4')">4</button><button class="secondary" onclick="append('5')">5</button><button class="secondary" onclick="append('6')">6</button><button onclick="append('*')">*</button>
+                <button class="secondary" onclick="append('1')">1</button><button class="secondary" onclick="append('2')">2</button><button class="secondary" onclick="append('3')">3</button><button onclick="append('-')">-</button>
+                <button class="secondary" onclick="clearCalc()">C</button><button class="secondary" onclick="append('0')">0</button><button onclick="calculate()">=</button><button onclick="append('+')">+</button>
             </div>
         </div>
-
         <div class="card">
-            <h2>Mértékegység váltó</h2>
-            <input type="number" id="conv-input" placeholder="Érték...">
-            <div style="display:flex; gap:10px;">
-                <select id="conv-from" onchange="filterUnits()"></select>
-                <select id="conv-to"></select>
+            <h3>Váltók</h3>
+            <input type="number" id="conv-input" placeholder="Mértékegység érték...">
+            <div style="display:flex; gap:5px;">
+                <select id="conv-from" onchange="filterUnits()"></select><select id="conv-to"></select>
             </div>
             <button onclick="convertUnits()">Átváltás</button>
-            <p id="conv-res" style="text-align: center; font-weight: bold; margin-top: 10px;"></p>
+            <p id="conv-res" style="text-align:center; font-size:14px;"></p>
         </div>
-
         <div class="card">
-            <h2>Valutaváltó (Online)</h2>
+            <h3>Valuta (Online)</h3>
             <input type="number" id="curr-input" placeholder="Összeg...">
-            <div style="display:flex; gap:10px;">
-                <select id="curr-from"></select>
-                <select id="curr-to"></select>
+            <div style="display:flex; gap:5px;">
+                <select id="curr-from"></select><select id="curr-to"></select>
             </div>
             <button onclick="convertCurrency()">Átváltás</button>
-            <p id="curr-res" style="text-align: center; font-weight: bold; margin-top: 10px;"></p>
+            <p id="curr-res" style="text-align:center; font-size:14px;"></p>
         </div>
     </div>
 
     <div id="view-shop" class="view">
         <div class="card">
-            <h2>Bevásárlólista</h2>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="shop-input" placeholder="Új tétel..." style="margin:0">
-                <button onclick="addItem()" style="width: 60px;">+</button>
-            </div>
-            <div id="shop-list" style="margin-top: 15px;"></div>
+            <h2>Lista</h2>
+            <div style="display: flex; gap: 5px;"><input type="text" id="shop-input" style="margin:0"><button onclick="addItem()" style="width:50px">+</button></div>
+            <div id="shop-list" style="margin-top:15px"></div>
         </div>
     </div>
 
     <div id="view-mem" class="view">
         <div class="card">
-            <h2>Napi Emlék</h2>
-            <input type="file" id="img-input" accept="image/*" style="display: none;" onchange="saveMem(this)">
-            <button id="mem-btn" onclick="document.getElementById('img-input').click()">Kép feltöltése</button>
-            <p id="mem-info" style="font-size: 12px; color: var(--text-sub); text-align: center; margin-top:10px;"></p>
+            <h2>Emlékek</h2>
+            <input type="file" id="img-input" accept="image/*" style="display:none" onchange="saveMem(this)">
+            <button id="mem-btn" onclick="document.getElementById('img-input').click()">Új kép</button>
             <div id="gallery" class="gallery-grid"></div>
         </div>
     </div>
 
     <div id="view-torch" class="view">
-        <div class="card" style="text-align: center; padding: 40px 0;">
-            <div style="font-size: 50px; margin-bottom: 20px;">🔦</div>
+        <div class="card" style="text-align: center;">
+            <div style="font-size: 50px; margin: 20px;">🔦</div>
             <h2>Zseblámpa</h2>
-            <button id="torch-btn">BE / KI</button>
-            <div id="console" style="margin-top:20px; font-size:12px; color:var(--text-sub);">Készen áll</div>
+            <button onclick="torchOn()">BEKAPCSOLÁS</button>
+            <button class="off-btn" onclick="torchOff()">KIKAPCSOLÁS</button>
+            <p id="console" style="color: var(--text-sub); font-size: 12px; margin-top: 10px;">Állapot: Ismeretlen</p>
         </div>
     </div>
 
     <div id="view-settings" class="view">
         <div class="card">
             <h2>Beállítások</h2>
-            <button class="secondary" onclick="toggleDarkMode()">Sötét mód váltása</button>
-            <button onclick="resetAll()" style="background:#FF3B30; color:white; margin-top:20px;">Adatok törlése</button>
+            <button class="secondary" onclick="toggleDarkMode()">Sötét mód</button>
+            <button onclick="resetAll()" style="background:#FF3B30; color:white;">Összes adat törlése</button>
         </div>
     </div>
 
@@ -242,123 +179,88 @@
     </nav>
 
     <script>
-        // --- INDÍTÁS ---
-        window.onload = function() {
-            alert("Figyelem: A zseblámpa funkció jelenleg csak Chrome-ban támogatott, és kamera engedély kell hozzá.");
-        };
+        // --- ZSEBLÁMPA FUNKCIÓK ---
+        let torchTrack = null;
 
-        // --- GALÉRIA FUNKCIÓK ---
+        function torchOn() {
+            const consoleOutput = document.getElementById("console");
+            if (!('mediaDevices' in navigator)) {
+                consoleOutput.innerText = "Hiba: mediaDevices nem támogatott.";
+                return;
+            }
+
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                const cameras = devices.filter((device) => device.kind === 'videoinput');
+                if (cameras.length === 0) {
+                    consoleOutput.innerText = "Hiba: Nem található kamera.";
+                    return;
+                }
+                const camera = cameras[cameras.length - 1];
+
+                navigator.mediaDevices.getUserMedia({
+                    video: {
+                        deviceId: camera.deviceId,
+                        facingMode: ['user', 'environment'],
+                        height: {ideal: 1080},
+                        width: {ideal: 1920}
+                    }
+                }).then(stream => {
+                    torchTrack = stream.getVideoTracks()[0];
+                    const imageCapture = new ImageCapture(torchTrack);
+                    imageCapture.getPhotoCapabilities().then(() => {
+                        torchTrack.applyConstraints({
+                            advanced: [{torch: true}]
+                        });
+                        consoleOutput.innerText = "Állapot: VILÁGÍT";
+                    });
+                }).catch(err => {
+                    consoleOutput.innerText = "Hiba: " + err;
+                });
+            });
+        }
+
+        function torchOff() {
+            const consoleOutput = document.getElementById("console");
+            if (torchTrack) {
+                try {
+                    torchTrack.applyConstraints({ advanced: [{ torch: false }] });
+                    torchTrack.stop(); // Leállítja a kamerát teljesen
+                    torchTrack = null;
+                    consoleOutput.innerText = "Állapot: KIKAPCSOLVA";
+                } catch (err) {
+                    consoleOutput.innerText = "Hiba a kikapcsoláskor: " + err;
+                }
+            } else {
+                consoleOutput.innerText = "Állapot: Már ki van kapcsolva.";
+            }
+        }
+
+        // --- EMLÉKEK ---
         function saveMem(input) {
-            if (!input.files || !input.files[0]) return;
-            const today = new Date().toLocaleDateString('hu-HU');
-            const m = JSON.parse(localStorage.getItem('m')) || {};
-            
-            if (m[today]) { alert("Mára már rögzítettél emléket!"); return; }
-
+            if (!input.files[0]) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                m[today] = e.target.result;
+                const m = JSON.parse(localStorage.getItem('m')) || {};
+                m[new Date().toLocaleString('hu-HU')] = e.target.result;
                 localStorage.setItem('m', JSON.stringify(m));
                 renderMem();
             };
             reader.readAsDataURL(input.files[0]);
         }
-
         function renderMem() {
             const g = document.getElementById('gallery');
             const m = JSON.parse(localStorage.getItem('m')) || {};
-            const today = new Date().toLocaleDateString('hu-HU');
             g.innerHTML = '';
-            
-            document.getElementById('mem-btn').style.display = m[today] ? 'none' : 'block';
-            document.getElementById('mem-info').innerText = m[today] ? "Mai emlék rögzítve." : "Kattints a feltöltéshez.";
-
-            Object.keys(m).sort().reverse().forEach(d => {
-                const item = document.createElement('div');
-                item.className = 'gallery-item';
-                item.onclick = function() { this.classList.toggle('show-date'); };
-                item.innerHTML = `
-                    <img src="${m[d]}" loading="lazy">
-                    <div class="date-overlay">${d}</div>
-                `;
-                g.appendChild(item);
+            Object.keys(m).reverse().forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.onclick = () => div.classList.toggle('show-date');
+                div.innerHTML = `<img src="${m[d]}"><div class="date-overlay">${d}</div>`;
+                g.appendChild(div);
             });
         }
 
-        // --- MÉRTÉKEGYSÉG ---
-        const units = {
-            hossz: { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, km: 1000 },
-            folyadek: { l: 1, ml: 0.001, cl: 0.01, hl: 100 },
-            suly: { g: 1, dkg: 10, kg: 1000, t: 1000000, q: 100000 }
-        };
-
-        function initUnits() {
-            const from = document.getElementById('conv-from');
-            from.innerHTML = '';
-            Object.keys(units).forEach(cat => {
-                const group = document.createElement('optgroup'); group.label = cat.toUpperCase();
-                Object.keys(units[cat]).forEach(u => from.add(new Option(u, `${cat}:${u}`)));
-            });
-            filterUnits();
-        }
-
-        function filterUnits() {
-            const [cat] = document.getElementById('conv-from').value.split(':');
-            const to = document.getElementById('conv-to'); to.innerHTML = '';
-            Object.keys(units[cat]).forEach(u => to.add(new Option(u, u)));
-        }
-
-        function convertUnits() {
-            const val = parseFloat(document.getElementById('conv-input').value);
-            const [cat, fromU] = document.getElementById('conv-from').value.split(':');
-            const toU = document.getElementById('conv-to').value;
-            if(isNaN(val)) return;
-            const res = (val * units[cat][fromU]) / units[cat][toU];
-            document.getElementById('conv-res').innerText = `${val} ${fromU} = ${res.toLocaleString()} ${toU}`;
-        }
-
-        // --- VALUTA ---
-        async function loadCurrencyList() {
-            try {
-                const r = await fetch('https://api.frankfurter.app/currencies');
-                const d = await r.json();
-                const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
-                Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
-                f.value = "EUR"; t.value = "HUF";
-            } catch(e) {}
-        }
-
-        async function convertCurrency() {
-            const a = document.getElementById('curr-input').value, f = document.getElementById('curr-from').value, t = document.getElementById('curr-to').value;
-            if(!a) return;
-            const resEl = document.getElementById('curr-res'); resEl.innerText = "Lekérés...";
-            try {
-                const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
-                const d = await r.json();
-                resEl.innerText = `${a} ${f} = ${d.rates[t].toLocaleString()} ${t}`;
-            } catch(e) { resEl.innerText = "Hiba az online váltásnál."; }
-        }
-
-        // --- ZSEBLÁMPA ---
-        let track = null;
-        async function initTorch() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                track = stream.getVideoTracks()[0];
-                const imageCapture = new ImageCapture(track);
-                const caps = await imageCapture.getPhotoCapabilities();
-                if (caps.torch) {
-                    let on = false;
-                    document.getElementById('torch-btn').onclick = async () => {
-                        on = !on;
-                        await track.applyConstraints({ advanced: [{ torch: on }] });
-                        document.getElementById('console').innerText = on ? "Világít" : "Kikapcsolva";
-                    };
-                }
-            } catch(e) { document.getElementById('console').innerText = "Nem támogatott eszköz."; }
-        }
-
-        // --- NAV ÉS ALAPOK ---
+        // --- ALAP APP FUNKCIÓK ---
         function nav(id, el) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -366,31 +268,63 @@
             el.classList.add('active');
             document.getElementById('view-title').innerText = {tools:'Eszközök', shop:'Lista', mem:'Emlékek', torch:'Zseblámpa', settings:'Beállítások'}[id];
             if(id === 'mem') renderMem();
-            if(id === 'torch' && !track) initTorch();
         }
 
         let ex = "";
         function append(v) { ex += v; document.getElementById('display').innerText = ex; }
         function clearCalc() { ex = ""; document.getElementById('display').innerText = "0"; }
-        function calculate() { try { ex = eval(ex).toString(); document.getElementById('display').innerText = ex; } catch { ex = ""; }}
+        function calculate() { try { ex = eval(ex).toString(); document.getElementById('display').innerText = ex; } catch { ex = "0"; }}
+
+        const units = { hossz: { m: 1, cm: 0.01, mm: 0.001, km: 1000 }, suly: { g: 1, kg: 1000, t: 1000000 } };
+        function initUnits() {
+            const f = document.getElementById('conv-from');
+            Object.keys(units).forEach(c => Object.keys(units[c]).forEach(u => f.add(new Option(u, `${c}:${u}`))));
+            filterUnits();
+        }
+        function filterUnits() {
+            const [c] = document.getElementById('conv-from').value.split(':');
+            const t = document.getElementById('conv-to'); t.innerHTML = '';
+            Object.keys(units[c]).forEach(u => t.add(new Option(u, u)));
+        }
+        function convertUnits() {
+            const v = parseFloat(document.getElementById('conv-input').value);
+            const [c, f] = document.getElementById('conv-from').value.split(':'), t = document.getElementById('conv-to').value;
+            if (isNaN(v)) return;
+            document.getElementById('conv-res').innerText = (v * units[c][f] / units[c][t]).toLocaleString();
+        }
+
+        async function loadCurrencies() {
+            const r = await fetch('https://api.frankfurter.app/currencies');
+            const d = await r.json();
+            const f = document.getElementById('curr-from'), t = document.getElementById('curr-to');
+            Object.keys(d).forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); });
+            f.value = "EUR"; t.value = "HUF";
+        }
+        async function convertCurrency() {
+            const a = document.getElementById('curr-input').value, f = document.getElementById('curr-from').value, t = document.getElementById('curr-to').value;
+            if (!a) return;
+            const r = await fetch(`https://api.frankfurter.app/latest?amount=${a}&from=${f}&to=${t}`);
+            const d = await r.json();
+            document.getElementById('curr-res').innerText = d.rates[t].toLocaleString() + " " + t;
+        }
 
         let items = JSON.parse(localStorage.getItem('l')) || [];
         function renderShop() {
             const c = document.getElementById('shop-list'); c.innerHTML = '';
-            items.forEach((it, i) => {
-                c.innerHTML += `<div class="list-item"><span>${it}</span><span onclick="del(${i})" style="color:#FF3B30; font-weight:bold; cursor:pointer;">✕</span></div>`;
-            });
+            items.forEach((it, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; background:var(--btn-sec); border-radius:10px; margin-bottom:5px;">${it}<span onclick="del(${i})" style="color:red">✕</span></div>`);
             localStorage.setItem('l', JSON.stringify(items));
         }
         function addItem() { const i = document.getElementById('shop-input'); if(i.value){items.push(i.value); i.value=''; renderShop();}}
         function del(i) { items.splice(i,1); renderShop(); }
 
         function toggleDarkMode() { localStorage.setItem('dark', document.body.classList.toggle('dark-mode')); }
-        function resetAll() { if(confirm("Minden adatot törölsz?")){localStorage.clear(); location.reload();}}
+        function resetAll() { if(confirm("Törlés?")){localStorage.clear(); location.reload();}}
 
+        // START
+        alert("A zseblámpa funkció csak Chrome-ban biztos, és kamera engedély kell hozzá!");
         document.getElementById('today-date').innerText = new Date().toLocaleDateString('hu-HU', {weekday:'long', month:'long', day:'numeric'});
         if(localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
-        initUnits(); loadCurrencyList(); renderShop();
+        initUnits(); loadCurrencies(); renderShop();
     </script>
 </body>
 </html>

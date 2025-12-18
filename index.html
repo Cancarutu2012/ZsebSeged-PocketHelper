@@ -236,30 +236,60 @@
         }
 
         // --- EMLÉKEK ---
-        function saveMem(input) {
-            if (!input.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const m = JSON.parse(localStorage.getItem('m')) || {};
-                m[new Date().toLocaleString('hu-HU')] = e.target.result;
-                localStorage.setItem('m', JSON.stringify(m));
-                renderMem();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-        function renderMem() {
-            const g = document.getElementById('gallery');
-            const m = JSON.parse(localStorage.getItem('m')) || {};
-            g.innerHTML = '';
-            Object.keys(m).reverse().forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'gallery-item';
-                div.onclick = () => div.classList.toggle('show-date');
-                div.innerHTML = `<img src="${m[d]}"><div class="date-overlay">${d}</div>`;
-                g.appendChild(div);
-            });
-        }
+       // --- EMLÉKEK (MEMORIES) JAVÍTOTT ---
+function saveMem(input) {
+    if (!input.files || !input.files[0]) return;
 
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const m = JSON.parse(localStorage.getItem('m')) || {};
+        // Egyszerűbb kulcs a dátumnak, hogy ne legyen hiba az ID-kban
+        const now = new Date();
+        const dateKey = now.toLocaleDateString('hu-HU') + " " + now.toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit'});
+        
+        m[dateKey] = e.target.result;
+        
+        try {
+            localStorage.setItem('m', JSON.stringify(m));
+            renderMem();
+        } catch (err) {
+            alert("Betelt a tárhely! Törölj régebbi adatokat.");
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function renderMem() {
+    const g = document.getElementById('gallery');
+    if (!g) return;
+    
+    const m = JSON.parse(localStorage.getItem('m')) || {};
+    g.innerHTML = '';
+    
+    // Sorbarendezzük a dátumokat (legfrissebb elől)
+    const keys = Object.keys(m).sort().reverse();
+    
+    if (keys.length === 0) {
+        document.getElementById('mem-info').innerText = "Kattints a feltöltéshez.";
+    } else {
+        document.getElementById('mem-info').innerText = "Koppints a képre a dátumért!";
+    }
+
+    keys.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+        // Erősített kattintás esemény
+        div.onclick = function() { 
+            this.classList.toggle('show-date'); 
+        };
+        
+        div.innerHTML = `
+            <img src="${m[d]}" loading="lazy">
+            <div class="date-overlay">${d}</div>
+        `;
+        g.appendChild(div);
+    });
+}
         // --- ALAP APP FUNKCIÓK ---
         function nav(id, el) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -328,3 +358,4 @@
     </script>
 </body>
 </html>
+

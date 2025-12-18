@@ -359,23 +359,72 @@ function renderMem() {
         function clearCalc() { ex = ""; document.getElementById('display').innerText = "0"; }
         function calculate() { try { ex = eval(ex).toString(); document.getElementById('display').innerText = ex; } catch { ex = "0"; }}
 
-        const units = { hossz: { m: 1, cm: 0.01, mm: 0.001, km: 1000 }, suly: { g: 1, kg: 1000, t: 1000000 } };
-        function initUnits() {
-            const f = document.getElementById('conv-from');
-            Object.keys(units).forEach(c => Object.keys(units[c]).forEach(u => f.add(new Option(u, `${c}:${u}`))));
-            filterUnits();
-        }
-        function filterUnits() {
-            const [c] = document.getElementById('conv-from').value.split(':');
-            const t = document.getElementById('conv-to'); t.innerHTML = '';
-            Object.keys(units[c]).forEach(u => t.add(new Option(u, u)));
-        }
-        function convertUnits() {
-            const v = parseFloat(document.getElementById('conv-input').value);
-            const [c, f] = document.getElementById('conv-from').value.split(':'), t = document.getElementById('conv-to').value;
-            if (isNaN(v)) return;
-            document.getElementById('conv-res').innerText = (v * units[c][f] / units[c][t]).toLocaleString();
-        }
+       // --- MÉRTÉKEGYSÉG VÁLTÓ BŐVÍTÉSE ---
+const units = { 
+    hossz: { 
+        m: 1, 
+        cm: 0.01, 
+        mm: 0.001, 
+        dm: 0.1, 
+        km: 1000 
+    }, 
+    suly: { 
+        g: 1, 
+        dkg: 10, 
+        kg: 1000, 
+        t: 1000000, 
+        q: 100000 
+    },
+    folyadek: { 
+        ml: 1, 
+        cl: 10, 
+        dl: 100, 
+        l: 1000, 
+        hl: 100000 
+    } 
+};
+
+function initUnits() {
+    const f = document.getElementById('conv-from');
+    f.innerHTML = ''; // Kiürítjük az előzőeket
+    
+    Object.keys(units).forEach(cat => {
+        const group = document.createElement('optgroup');
+        // Magyar nevek a kategóriáknak
+        const catNames = {hossz: "HOSSZÚSÁG", suly: "SÚLY", folyadek: "FOLYADÉK"};
+        group.label = catNames[cat] || cat.toUpperCase();
+        
+        Object.keys(units[cat]).forEach(u => {
+            group.appendChild(new Option(u, `${cat}:${u}`));
+        });
+        f.appendChild(group);
+    });
+    filterUnits();
+}
+
+function filterUnits() {
+    const val = document.getElementById('conv-from').value;
+    if (!val) return;
+    const [c] = val.split(':');
+    const t = document.getElementById('conv-to'); 
+    t.innerHTML = ''; 
+    Object.keys(units[c]).forEach(u => t.add(new Option(u, u)));
+}
+
+function convertUnits() {
+    const v = parseFloat(document.getElementById('conv-input').value);
+    const fromSelect = document.getElementById('conv-from').value;
+    if (isNaN(v) || !fromSelect) return;
+    
+    const [c, f] = fromSelect.split(':');
+    const t = document.getElementById('conv-to').value;
+    
+    // Kiszámoljuk az alapmértékegységre (pl. ml-re vagy g-ra), majd az új egységre
+    const result = (v * units[c][f]) / units[c][t];
+    
+    document.getElementById('conv-res').innerText = 
+        `${v} ${f} = ${result.toLocaleString('hu-HU')} ${t}`;
+}
 
         async function loadCurrencies() {
             const r = await fetch('https://api.frankfurter.app/currencies');
@@ -412,6 +461,7 @@ function renderMem() {
     </script>
 </body>
 </html>
+
 
 
 

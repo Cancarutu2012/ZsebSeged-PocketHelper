@@ -238,16 +238,26 @@
         // --- EMLÉKEK ---
        // --- EMLÉKEK (MEMORIES) JAVÍTOTT ---
 // --- EMLÉKEK (MEMORIES) JAVÍTOTT ÉS TÖMÖRÍTETT ---
+// --- EMLÉKEK (MEMORIES) JAVÍTOTT ---
 function saveMem(input) {
     if (!input.files || !input.files[0]) return;
+
+    const today = new Date().toLocaleDateString('hu-HU');
+    const m = JSON.parse(localStorage.getItem('m')) || {};
+
+    // ELLENŐRZÉS: Csak egy kép naponta
+    if (m[today]) {
+        alert("Mára már rögzítettél emléket! Egy naphoz csak egy kép tartozhat.");
+        input.value = ""; // Resetelheti a file inputot
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-            // KÉP ÚJR MÉRETEZÉSE (Tömörítés)
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800; // Elég nagy a minőséghez, de elég kicsi a tárhelyhez
+            const MAX_WIDTH = 800;
             let width = img.width;
             let height = img.height;
 
@@ -268,26 +278,29 @@ function saveMem(input) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Kép kinyerése gyengébb minőségben (0.7 = 70% minőség)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-            const m = JSON.parse(localStorage.getItem('m')) || {};
-            const now = new Date();
-            const dateKey = now.toLocaleDateString('hu-HU') + " " + 
-                            now.toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
             
-            m[dateKey] = dataUrl;
+            m[today] = dataUrl;
             
             try {
                 localStorage.setItem('m', JSON.stringify(m));
                 renderMem();
             } catch (err) {
-                alert("A tárhely még mindig tele van. Próbáld meg törölni az app adatait a beállításokban!");
+                alert("Hiba: Túl nagy a kép vagy betelt a tárhely!");
             }
         };
         img.src = e.target.result;
     };
     reader.readAsDataURL(input.files[0]);
+}
+
+function deleteMem(date) {
+    if (confirm("Biztosan törlöd ezt az emléket? (" + date + ")")) {
+        const m = JSON.parse(localStorage.getItem('m')) || {};
+        delete m[date];
+        localStorage.setItem('m', JSON.stringify(m));
+        renderMem();
+    }
 }
 
 function renderMem() {
@@ -298,20 +311,35 @@ function renderMem() {
     g.innerHTML = '';
     
     const keys = Object.keys(m).sort().reverse();
+    const today = new Date().toLocaleDateString('hu-HU');
     
+    // Ha már van mai emlék, elrejtjük a feltöltő gombot
+    const uploadBtn = document.getElementById('mem-btn');
+    if (uploadBtn) {
+        uploadBtn.style.display = m[today] ? 'none' : 'block';
+    }
+
     const infoText = document.getElementById('mem-info');
     if(infoText) {
-        infoText.innerText = keys.length === 0 ? "Kattints a feltöltéshez." : "Koppints a képre a dátumért!";
+        infoText.innerText = m[today] ? "A mai emléked rögzítve." : "Még nincs mára emléked.";
     }
 
     keys.forEach(d => {
         const div = document.createElement('div');
         div.className = 'gallery-item';
-        div.onclick = function() { this.classList.toggle('show-date'); };
+        div.onclick = function(e) { 
+            // Csak akkor váltunk, ha nem a törlés gombra kattintottak
+            if(e.target.tagName !== 'BUTTON') {
+                this.classList.toggle('show-date'); 
+            }
+        };
         
         div.innerHTML = `
             <img src="${m[d]}" loading="lazy">
-            <div class="date-overlay">${d}</div>
+            <div class="date-overlay">
+                <div>${d}</div>
+                <button onclick="deleteMem('${d}')" style="background:#FF3B30; color:white; padding:5px; margin-top:5px; font-size:10px; border-radius:5px; width:auto; display:inline-block;">Törlés</button>
+            </div>
         `;
         g.appendChild(div);
     });
@@ -384,5 +412,6 @@ function renderMem() {
     </script>
 </body>
 </html>
+
 
 

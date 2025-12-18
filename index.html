@@ -237,24 +237,55 @@
 
         // --- EMLÉKEK ---
        // --- EMLÉKEK (MEMORIES) JAVÍTOTT ---
+// --- EMLÉKEK (MEMORIES) JAVÍTOTT ÉS TÖMÖRÍTETT ---
 function saveMem(input) {
     if (!input.files || !input.files[0]) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
-        const m = JSON.parse(localStorage.getItem('m')) || {};
-        // Egyszerűbb kulcs a dátumnak, hogy ne legyen hiba az ID-kban
-        const now = new Date();
-        const dateKey = now.toLocaleDateString('hu-HU') + " " + now.toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit'});
-        
-        m[dateKey] = e.target.result;
-        
-        try {
-            localStorage.setItem('m', JSON.stringify(m));
-            renderMem();
-        } catch (err) {
-            alert("Betelt a tárhely! Törölj régebbi adatokat.");
-        }
+        const img = new Image();
+        img.onload = () => {
+            // KÉP ÚJR MÉRETEZÉSE (Tömörítés)
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800; // Elég nagy a minőséghez, de elég kicsi a tárhelyhez
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_WIDTH) {
+                    width *= MAX_WIDTH / height;
+                    height = MAX_WIDTH;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Kép kinyerése gyengébb minőségben (0.7 = 70% minőség)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            const m = JSON.parse(localStorage.getItem('m')) || {};
+            const now = new Date();
+            const dateKey = now.toLocaleDateString('hu-HU') + " " + 
+                            now.toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            m[dateKey] = dataUrl;
+            
+            try {
+                localStorage.setItem('m', JSON.stringify(m));
+                renderMem();
+            } catch (err) {
+                alert("A tárhely még mindig tele van. Próbáld meg törölni az app adatait a beállításokban!");
+            }
+        };
+        img.src = e.target.result;
     };
     reader.readAsDataURL(input.files[0]);
 }
@@ -266,22 +297,17 @@ function renderMem() {
     const m = JSON.parse(localStorage.getItem('m')) || {};
     g.innerHTML = '';
     
-    // Sorbarendezzük a dátumokat (legfrissebb elől)
     const keys = Object.keys(m).sort().reverse();
     
-    if (keys.length === 0) {
-        document.getElementById('mem-info').innerText = "Kattints a feltöltéshez.";
-    } else {
-        document.getElementById('mem-info').innerText = "Koppints a képre a dátumért!";
+    const infoText = document.getElementById('mem-info');
+    if(infoText) {
+        infoText.innerText = keys.length === 0 ? "Kattints a feltöltéshez." : "Koppints a képre a dátumért!";
     }
 
     keys.forEach(d => {
         const div = document.createElement('div');
         div.className = 'gallery-item';
-        // Erősített kattintás esemény
-        div.onclick = function() { 
-            this.classList.toggle('show-date'); 
-        };
+        div.onclick = function() { this.classList.toggle('show-date'); };
         
         div.innerHTML = `
             <img src="${m[d]}" loading="lazy">
@@ -358,4 +384,5 @@ function renderMem() {
     </script>
 </body>
 </html>
+
 
